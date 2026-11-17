@@ -1,4 +1,5 @@
 """Analyze playback monitor audio locally; microphone devices are never selected."""
+from i18n import tr
 import os
 from pathlib import Path
 import select
@@ -12,7 +13,7 @@ class AudioAnalyzer:
     def __init__(self,path):self.path=Path(path);self.process=None;self.buffer=bytearray();self.energy=0;self.bass=0;self.error='';self.thread=None;self.event=threading.Event()
     def start(self):
         sink=subprocess.run(['pactl','get-default-sink'],capture_output=True,text=True,timeout=2)
-        if sink.returncode:raise RuntimeError('Не найден аудиовыход PulseAudio/PipeWire.')
+        if sink.returncode:raise RuntimeError(tr('Не найден аудиовыход PulseAudio/PipeWire.'))
         self.process=subprocess.Popen(['parec','--device='+sink.stdout.strip()+'.monitor','--format=float32le','--rate=22050','--channels=1','--latency-msec=80'],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
         os.set_blocking(self.process.stdout.fileno(),False)
     def poll(self):
@@ -27,7 +28,7 @@ class AudioAnalyzer:
             except Exception as e:self.error=str(e);return
             self.event.wait(.05)
     def sample(self):
-        if self.process.poll() is not None:raise RuntimeError('Поток звука недоступен.')
+        if self.process.poll() is not None:raise RuntimeError(tr('Поток звука недоступен.'))
         try:self.buffer.extend(os.read(self.process.stdout.fileno(),65536))
         except BlockingIOError:pass
         if len(self.buffer)>=4096:

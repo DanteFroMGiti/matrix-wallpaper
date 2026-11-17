@@ -1,4 +1,5 @@
 """Interactive crop, pan, zoom and foreground mask painting."""
+from i18n import tr
 from pathlib import Path
 import uuid
 import gi
@@ -14,8 +15,8 @@ def pixbuf(image):
 
 class Composition(Gtk.Dialog):
     def __init__(self,parent,source,values,ratio=16/9):
-        super().__init__(title='Кадрирование и выделение объекта',transient_for=parent,modal=True)
-        self.add_buttons('Отмена',Gtk.ResponseType.CANCEL,'Сохранить',Gtk.ResponseType.OK)
+        super().__init__(title=tr('Кадрирование и выделение объекта'),transient_for=parent,modal=True)
+        self.add_buttons(tr('Отмена'),Gtk.ResponseType.CANCEL,tr('Сохранить'),Gtk.ResponseType.OK)
         self.set_default_size(850,650)
         self.values=values.copy();self.image=ImageOps.exif_transpose(Image.open(source)).convert('RGB');self.image.thumbnail((1920,1920))
         self.mask=Image.new('L',self.image.size,0)
@@ -25,10 +26,10 @@ class Composition(Gtk.Dialog):
         content=self.get_content_area();content.set_border_width(12);content.set_spacing(12)
         toolbar=Gtk.Box(spacing=10)
         self.tool=Gtk.ComboBoxText()
-        for key,text in [('drag','Переместить картинку'),('paint','Выделить объект кистью'),('erase','Стереть выделение')]:self.tool.append(key,text)
+        for key,text in [('drag',tr('Переместить картинку')),('paint',tr('Выделить объект кистью')),('erase',tr('Стереть выделение'))]:self.tool.append(key,text)
         self.tool.set_active_id('drag');toolbar.pack_start(self.tool,False,False,0)
-        self.tool.set_tooltip_text('Выберите действие левой кнопки: двигать кадр, отмечать главный объект или стирать маску. Красная маска видна только в редакторе.')
-        for text,callback in [('Отменить мазок',self.undo_stroke),('Очистить',self.clear),('Сбросить кадр',self.reset_crop)]:
+        self.tool.set_tooltip_text(tr('Выберите действие левой кнопки: двигать кадр, отмечать главный объект или стирать маску. Красная маска видна только в редакторе.'))
+        for text,callback in [(tr('Отменить мазок'),self.undo_stroke),(tr('Очистить'),self.clear),(tr('Сбросить кадр'),self.reset_crop)]:
             b=Gtk.Button(label=text);b.connect('clicked',callback);toolbar.pack_start(b,False,False,0)
         content.pack_start(toolbar,False,False,0)
         self.area=Gtk.DrawingArea();self.area.set_size_request(720,360)
@@ -36,13 +37,13 @@ class Composition(Gtk.Dialog):
         self.area.connect('draw',self.draw);self.area.connect('button-press-event',self.press);self.area.connect('motion-notify-event',self.move);self.area.connect('button-release-event',self.release);self.area.connect('scroll-event',self.scroll)
         frame=Gtk.AspectFrame(ratio=ratio,obey_child=False);frame.add(self.area);content.pack_start(frame,True,True,0)
         self.sliders={}
-        for key,label,low,high,step,default in [('zoom','Масштаб',1,5,.05,1),('pan_x','Положение по горизонтали',-1,1,.02,0),('pan_y','Положение по вертикали',-1,1,.02,0),('brush','Размер кисти',5,120,1,35)]:
+        for key,label,low,high,step,default in [('zoom',tr('Масштаб'),1,5,.05,1),('pan_x',tr('Положение по горизонтали'),-1,1,.02,0),('pan_y',tr('Положение по вертикали'),-1,1,.02,0),('brush',tr('Размер кисти'),5,120,1,35)]:
             row=Gtk.Box(spacing=10);row.pack_start(Gtk.Label(label=label,xalign=0),False,False,0)
             scale=Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL,low,high,step);scale.set_digits(0 if key=='brush' else 2);scale.set_value(values.get(key,default));scale.connect('value-changed',lambda *_:self.area.queue_draw());row.pack_start(scale,True,True,0);self.sliders[key]=scale;content.pack_start(row,False,False,0)
             tip(scale,key)
-        hint=Gtk.Label(label='Красная область — главный объект: его детали сохраняются, фон сильнее растворяется в символах. Картинку можно двигать мышью, масштаб — колесом.',xalign=0);hint.set_line_wrap(True);content.pack_start(hint,False,False,0)
+        hint=Gtk.Label(label=tr('Красная область — главный объект: его детали сохраняются, фон сильнее растворяется в символах. Картинку можно двигать мышью, масштаб — колесом.'),xalign=0);hint.set_line_wrap(True);content.pack_start(hint,False,False,0)
         button_tips(self)
-        self.area.set_tooltip_text('Тяните левой кнопкой, чтобы выполнить выбранное действие. Колесо приближает или отдаляет картинку. Исходный файл не изменяется.')
+        self.area.set_tooltip_text(tr('Тяните левой кнопкой, чтобы выполнить выбранное действие. Колесо приближает или отдаляет картинку. Исходный файл не изменяется.'))
         self.show_all()
     def transform(self):
         w,h=self.area.get_allocated_width(),self.area.get_allocated_height();iw,ih=self.image.size

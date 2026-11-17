@@ -1,4 +1,5 @@
 """Shared settings and image preparation for Matrix Wallpaper."""
+from i18n import tr
 import json
 import hashlib
 import math
@@ -58,34 +59,34 @@ def load():
 def validate(values):
     result = {key: values.get(key, default) for key, default in DEFAULTS.items()}
     for key in ('image','characters','focus_mask'):
-        if not isinstance(result[key],str):raise ValueError('Ожидается текст: '+key)
+        if not isinstance(result[key],str):raise ValueError(tr('Ожидается текст: ')+key)
     if result['mode'] not in ('characters', 'phrases'):
-        raise ValueError('Неизвестный режим текста.')
+        raise ValueError(tr('Неизвестный режим текста.'))
     if result['mode'] == 'phrases':
         lines = [' '.join(line.split()) for line in result['characters'].splitlines() if line.strip()]
         if not lines or len(lines) > 128 or any(len(line) > 512 for line in lines):
-            raise ValueError('Введите от 1 до 128 строк, не более 512 символов в строке.')
+            raise ValueError(tr('Введите от 1 до 128 строк, не более 512 символов в строке.'))
         result['characters'] = '\n'.join(lines)
     else:
         result['characters'] = ''.join(dict.fromkeys(c for c in result['characters'] if c.isprintable() and not c.isspace()))
     if not 1 <= len(set(result['characters'])) <= 256:
-        raise ValueError('Введите от 1 до 256 различных видимых символов.')
+        raise ValueError(tr('Введите от 1 до 256 различных видимых символов.'))
     for key in ('foreground', 'background', 'highlight'):
         value = result[key]
         if len(value) != 7 or value[0] != '#':
-            raise ValueError('Цвет должен иметь формат #RRGGBB.')
+            raise ValueError(tr('Цвет должен иметь формат #RRGGBB.'))
         int(value[1:], 16)
     for key, choices in {'direction': ('down', 'up', 'right', 'left'), 'glyph_direction': ('none', 'left', 'right', 'up', 'down'), 'color_mode': ('mono', 'source', 'gradient', 'rainbow'), 'reveal': ('steady', 'reveal', 'cycle'), 'backend': ('auto', 'gpu', 'cpu')}.items():
-        if result[key] not in choices: raise ValueError('Неизвестное значение: ' + key)
+        if result[key] not in choices: raise ValueError(tr('Неизвестное значение: ') + key)
     for key in ('eco', 'pause_hidden', 'pause_locked', 'random_speed', 'music', 'auto_limit'):
         result[key] = bool(result[key])
     for key, low, high in [('size', 8, 32), ('speed', .2, 3), ('glyph_speed', 0, 8), ('brightness', .3, 2), ('contrast', .5, 2), ('fps', 5, 60), ('battery_fps', 3, 20), ('tail', 3, 70), ('density', .1, 1), ('cycle', 6, 60), ('zoom', 1, 5), ('pan_x', -1, 1), ('pan_y', -1, 1), ('focus_strength', 0, 1), ('layers', 1, 3), ('depth', 0, 1), ('music_sensitivity', .1, 5), ('music_amount', 0, .3), ('cpu_limit', 5, 100), ('transition', 0, 8)]:
         number = float(result[key])
-        if not math.isfinite(number): raise ValueError('Число должно быть конечным: ' + key)
+        if not math.isfinite(number): raise ValueError(tr('Число должно быть конечным: ') + key)
         result[key] = max(low, min(high, number))
     for key in ('size', 'fps', 'battery_fps', 'tail', 'cycle', 'layers'): result[key] = int(result[key])
     monitors = result['monitors']
-    if not isinstance(monitors, dict) or len(monitors)>32: raise ValueError('Неверные настройки мониторов.')
+    if not isinstance(monitors, dict) or len(monitors)>32: raise ValueError(tr('Неверные настройки мониторов.'))
     result['monitors'] = {str(name): validate(dict(value, monitors={})) for name, value in monitors.items()}
     return result
 
@@ -156,7 +157,7 @@ def commit(values, target=None):
     image = Path(values['image'])
     destination = source_path(target)
     if image.exists(): prepare_image(image, destination)
-    elif not destination.exists(): raise ValueError('Картинка не найдена: ' + str(image))
+    elif not destination.exists(): raise ValueError(tr('Картинка не найдена: ') + str(image))
     current = load()
     if target:
         current['monitors'][target] = dict(values, monitors={})
@@ -169,7 +170,7 @@ def load_profiles():
     return json.loads(PROFILES.read_text()) if PROFILES.exists() else {}
 
 def store_profile(name, values):
-    if not name.strip(): raise ValueError('Введите имя профиля.')
+    if not name.strip(): raise ValueError(tr('Введите имя профиля.'))
     values = validate(values)
     assets = BASE / 'profile-images'
     assets.mkdir(exist_ok=True)
@@ -213,7 +214,7 @@ def commit_all(values):
             source=Path(item['image'])
             if not source.exists():
                 if target.exists():continue
-                raise ValueError('Картинка не найдена: '+str(source))
+                raise ValueError(tr('Картинка не найдена: ')+str(source))
             temp=target.with_name(target.stem+'.'+uuid.uuid4().hex+'.png')
             prepare_image(source,temp);staged.append((temp,target))
         for temp,target in staged:temp.replace(target)

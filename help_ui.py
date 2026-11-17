@@ -1,4 +1,5 @@
 """Offline, searchable user guide and shared explanations for editor controls."""
+from i18n import tr
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk
@@ -58,6 +59,7 @@ GUIDES = {
     'export': ('Видео MP4', 'Кнопка «Экспорт MP4…» создаёт ролик из текущих настроек предпросмотра. Выберите файл, длительность, частоту кадров и разрешение. Устанавливать оформление на рабочий стол перед экспортом не требуется.\n\nВ видео попадает только эффект с картинкой. Окна, значки, курсор и рамка выделения рабочего стола не записываются. Звуковой дорожки нет.\n\nДвижение подстраивается для повторения ролика. В режиме «Плавно собирается» экспортируется уже собранная картинка, а в режиме сборки и распада цикл подстраивается под длительность видео. Поэтому начало ролика может отличаться от запуска обоев.\n\n1080p и высокий FPS требуют больше времени. Следите за прогрессом; экспорт можно отменить. При отмене существующий целевой файл остаётся прежним.'),
     'schedule': ('Расписание и автозапуск', 'Сначала сохраните нужные профили. Во вкладке «Инструменты» откройте «Расписание профилей…», добавьте строки и включите переключение. Дважды нажмите ячейку времени или профиля для редактирования. Формат времени — ЧЧ:ММ, например 08:00 и 22:30. Нажмите «Сохранить».\n\nРасписание повторяется каждый день по местному времени. Применяется последняя запись до текущего времени, включая предыдущий день. Например, в 07:00 действует вчерашний профиль 22:30, а в 08:00 включится утренний. При включении расписания профиль может смениться сразу.\n\nРучные изменения остаются до следующего интервала расписания. Расписание работает, пока запущены обои.\n\nДля запуска при входе включите соответствующую галочку во вкладке «Оформление» и нажмите «Применить». Сохранение расписания и ручная пауза действуют сразу, без общей кнопки применения.'),
     'troubleshooting': ('Если результат отличается от ожидаемого', 'Изменения видны только справа: нажмите «Применить к рабочему столу». Профиль и режим «Матрица» в редакторе сначала меняют предпросмотр.\n\nБуквы едут по горизонтали: «Эффекты и система» → «Движение символов» → «Неподвижно» или «Сверху вниз». Направление потоков задаётся отдельно.\n\nПараметр ничего не меняет: период нужен циклическому проявлению, глубина — нескольким слоям, сохранение деталей — маске кистью, параметры музыки — включённой реакции на звук, цель CPU — автоматическому подбору FPS.\n\nДвижение остановилось: проверьте кнопку «Пауза» / «Продолжить» и причину под предпросмотром. На скрытом рабочем столе и заблокированном экране возможна автоматическая пауза. Слишком редкое движение может быть следствием низкого FPS или цели CPU.\n\nКартинка тёмная: проверьте яркость, контраст, цвета и режим проявления. Для сравнения выберите «Постоянно читается». При проблемах с GPU попробуйте CPU / Cairo во вкладке «Инструменты».\n\nПредпросмотр остановлен: измените настройку, чтобы запустить его снова. Если показано сообщение об ошибке, исправьте указанную причину. Для проблем со значками смотрите раздел о файлах рабочего стола.'),
+    'language': ('Язык интерфейса', 'В верхней панели выберите Русский или English. Язык меняется сразу и сохраняется между запусками; нажимать «Применить» не нужно. Текущие правки, выбранная картинка, профили и пользовательский текст сохраняются. Подсказки, руководство и меню в трее используют выбранный язык. Во время применения настроек или экспорта переключатель временно недоступен.'),
 }
 
 BUTTON_TIPS = {
@@ -83,15 +85,18 @@ BUTTON_TIPS = {
 
 def tip(widget, key):
     title, text, _ = PARAMETERS[key]
-    widget.set_tooltip_text(text)
+    widget.set_tooltip_text(tr(text))
     accessible = widget.get_accessible()
-    accessible.set_name(title)
-    accessible.set_description(text)
+    accessible.set_name(tr(title))
+    accessible.set_description(tr(text))
 
 
 def button_tips(container):
-    if isinstance(container, Gtk.Button) and container.get_label() in BUTTON_TIPS:
-        container.set_tooltip_text(BUTTON_TIPS[container.get_label()])
+    if isinstance(container, Gtk.Button):
+        for label, text in BUTTON_TIPS.items():
+            if container.get_label() == tr(label):
+                container.set_tooltip_text(tr(text))
+                break
     if isinstance(container, Gtk.Container):
         for child in container.get_children():
             button_tips(child)
@@ -99,23 +104,23 @@ def button_tips(container):
 
 class GuideWindow(Gtk.Window):
     def __init__(self, parent):
-        super().__init__(title='Руководство — Матричные обои', transient_for=parent)
+        super().__init__(title=tr('Руководство — Матричные обои'), transient_for=parent)
         self.set_destroy_with_parent(True)
         self.set_default_size(920, 650)
         self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
-        self.entries = [(title, body, None) for title, body in GUIDES.values()]
-        self.entries += [(title, text, topic) for title, text, topic in PARAMETERS.values()]
+        self.entries = [(tr(title), tr(body), None) for title, body in GUIDES.values()]
+        self.entries += [(tr(title), tr(text), topic) for title, text, topic in PARAMETERS.values()]
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         box.set_border_width(16)
         self.add(box)
-        self.search = Gtk.SearchEntry(placeholder_text='Поиск по руководству и параметрам…')
-        self.search.get_accessible().set_name('Поиск по руководству')
+        self.search = Gtk.SearchEntry(placeholder_text=tr('Поиск по руководству и параметрам…'))
+        self.search.get_accessible().set_name(tr('Поиск по руководству'))
         box.pack_start(self.search, False, False, 0)
         body = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
         box.pack_start(body, True, True, 0)
         self.results = Gtk.ListBox()
         self.results.set_selection_mode(Gtk.SelectionMode.SINGLE)
-        self.results.get_accessible().set_name('Разделы и параметры')
+        self.results.get_accessible().set_name(tr('Разделы и параметры'))
         for index, (title, _, topic) in enumerate(self.entries):
             row = Gtk.ListBoxRow()
             row.entry_index = index
@@ -134,7 +139,7 @@ class GuideWindow(Gtk.Window):
         self.text = Gtk.TextView(editable=False, cursor_visible=True, wrap_mode=Gtk.WrapMode.WORD_CHAR)
         self.text.set_left_margin(20); self.text.set_right_margin(14)
         self.text.set_top_margin(12); self.text.set_bottom_margin(12)
-        self.text.get_accessible().set_name('Текст руководства')
+        self.text.get_accessible().set_name(tr('Текст руководства'))
         self.buffer = self.text.get_buffer()
         self.buffer.create_tag('title', weight=700, scale=1.35, pixels_below_lines=12)
         self.buffer.create_tag('section', weight=700, pixels_above_lines=18, pixels_below_lines=8)
@@ -164,12 +169,12 @@ class GuideWindow(Gtk.Window):
         self.results.invalidate_filter()
         self.results.invalidate_sort()
         rows = [row for row in self.results.get_children() if self.matches(row)]
-        self.count.set_text(f'Разделов и параметров: {len(rows)}. Esc — закрыть. Текст можно выделить и скопировать.')
+        self.count.set_text(tr('Разделов и параметров: {value0}. Esc — закрыть. Текст можно выделить и скопировать.').format(value0=len(rows)))
         if rows:
             self.results.select_row(rows[0])
         else:
             self.results.unselect_all()
-            self.buffer.set_text('Ничего не найдено. Попробуйте другое слово: «символы», «FPS», «профиль».')
+            self.buffer.set_text(tr('Ничего не найдено. Попробуйте другое слово: «символы», «FPS», «профиль».'))
 
     def compare_rows(self, first, second):
         words = self.search.get_text().casefold().split()
@@ -186,7 +191,7 @@ class GuideWindow(Gtk.Window):
         self.buffer.insert_with_tags_by_name(self.buffer.get_end_iter(), title + '\n', 'title')
         self.buffer.insert(self.buffer.get_end_iter(), text)
         if topic:
-            heading, guide = GUIDES[topic]
+            heading, guide = map(tr, GUIDES[topic])
             self.buffer.insert_with_tags_by_name(self.buffer.get_end_iter(), '\n\n' + heading + '\n', 'section')
             self.buffer.insert(self.buffer.get_end_iter(), guide)
         self.text.scroll_to_iter(self.buffer.get_start_iter(), 0, False, 0, 0)
@@ -214,17 +219,17 @@ def install_help(editor, header):
         for key, widget in group.items():
             tip(widget, key)
     for widget, text in [
-        (editor.charset, 'Выберите алфавит или готовые фразы. Полный эффект «Матрица» включается отдельной верхней кнопкой; этот список меняет только текст и его режим.'),
-        (editor.text_mode, 'Отдельные символы выбираются из введённого алфавита. В режиме слов и фраз каждую фразу пишите на новой строке; пробелы внутри неё сохраняются.'),
-        (editor.palette, 'Готовое сочетание цветов символов, фона и головок. Использование цветов зависит от режима цвета во вкладке «Эффекты и система».'),
-        (editor.profiles_combo, 'Загрузить сохранённое оформление в предпросмотр. Для установки на рабочий стол нажмите «Применить».'),
-        (editor.monitor_combo, GUIDES['monitors'][1].split('\n\n')[0]),
-        (editor.autostart, 'Запускать обои при входе в сеанс. Изменение сохраняется по кнопке «Применить».'),
-        (editor.metrics_label, 'Нагрузка отрисовки обоев выбранного монитора: фактический FPS, CPU в процентах одного логического потока и RAM. GPU, композитор и менеджер обоев сюда не включены.'),
+        (editor.charset, tr('Выберите алфавит или готовые фразы. Полный эффект «Матрица» включается отдельной верхней кнопкой; этот список меняет только текст и его режим.')),
+        (editor.text_mode, tr('Отдельные символы выбираются из введённого алфавита. В режиме слов и фраз каждую фразу пишите на новой строке; пробелы внутри неё сохраняются.')),
+        (editor.palette, tr('Готовое сочетание цветов символов, фона и головок. Использование цветов зависит от режима цвета во вкладке «Эффекты и система».')),
+        (editor.profiles_combo, tr('Загрузить сохранённое оформление в предпросмотр. Для установки на рабочий стол нажмите «Применить».')),
+        (editor.monitor_combo, tr(GUIDES['monitors'][1]).split('\n\n')[0]),
+        (editor.autostart, tr('Запускать обои при входе в сеанс. Изменение сохраняется по кнопке «Применить».')),
+        (editor.metrics_label, tr('Нагрузка отрисовки обоев выбранного монитора: фактический FPS, CPU в процентах одного логического потока и RAM. GPU, композитор и менеджер обоев сюда не включены.')),
     ]:
         widget.set_tooltip_text(text)
-    button = Gtk.Button(label='Руководство')
-    button.set_tooltip_text('Руководство и поиск по параметрам — F1. Подсказки также появляются при наведении на настройки.')
+    button = Gtk.Button(label=tr('Руководство'))
+    button.set_tooltip_text(tr('Руководство и поиск по параметрам — F1. Подсказки также появляются при наведении на настройки.'))
     button.connect('clicked', lambda *_: open_guide(editor))
     header.pack_end(button)
     editor.help_button = button

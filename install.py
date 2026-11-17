@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-FILES=['app.py','features.py','tools_ui.py','help_ui.py','composition.py','portable.py','settings.py','runtime.py','audio.py','schedule.py','exporter.py','tray.py','indicator.py','start.py','control.py','renderer.c','gpu.h','build.sh','README.md','tests_v2.py','tests_v3.py','default.png','VERSION','install.py','install-online.sh','tests_install.py','matrix-wallpaper.svg','build_release.py','desktop_layer.py','tests_v4.py']
+FILES=['app.py','features.py','tools_ui.py','help_ui.py','composition.py','portable.py','settings.py','runtime.py','audio.py','schedule.py','exporter.py','tray.py','indicator.py','i18n.py','messages_en.json','start.py','control.py','renderer.c','gpu.h','build.sh','README.md','README.en.md','tests_v2.py','tests_v3.py','default.png','VERSION','install.py','install-online.sh','tests_install.py','tests_i18n.py','matrix-wallpaper.svg','build_release.py','desktop_layer.py','tests_v4.py']
 
 def dependencies():
     errors=[]

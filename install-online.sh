@@ -3,7 +3,7 @@
 set -euo pipefail
 
 MATRIX_REPOSITORY='DanteFroMGiti/matrix-wallpaper'
-MATRIX_VERSION='3.5.0'
+MATRIX_VERSION='3.6.0'
 
 matrix_packages() {
     local distribution=" $1 "

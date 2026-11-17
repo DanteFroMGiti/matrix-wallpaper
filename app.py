@@ -42,10 +42,11 @@ PALETTES = {
 
 from features import Features
 from help_ui import install_help
+from i18n import tr, get_language, set_language, LANGUAGES
 
 class Editor(Features, Gtk.ApplicationWindow):
-    def __init__(self, app):
-        super().__init__(application=app, title='Матричные обои')
+    def __init__(self, app, state=None):
+        super().__init__(application=app, title=tr('Матричные обои'))
         self.set_icon_name('matrix-wallpaper')
         self.set_default_size(1080, 850)
         self.set_position(Gtk.WindowPosition.CENTER)
@@ -63,9 +64,16 @@ class Editor(Features, Gtk.ApplicationWindow):
         self.saved_presets = load_presets()
         self.colors = {}
         self.scales = {}
-        header = Gtk.HeaderBar(title='Матричные обои', subtitle='Изображение из падающих символов')
+        header = Gtk.HeaderBar(title=tr('Матричные обои'), subtitle=tr('Изображение из падающих символов'))
         header.set_show_close_button(True)
         self.set_titlebar(header)
+        self.language_combo = Gtk.ComboBoxText()
+        for code, name in LANGUAGES.items(): self.language_combo.append(code, name)
+        self.language_combo.set_active_id(get_language())
+        self.language_combo.set_tooltip_text(tr('Язык интерфейса. Изменяется сразу; настройки обоев и текущие правки сохраняются.'))
+        self.language_combo.get_accessible().set_name(tr('Язык интерфейса'))
+        self.language_combo.connect('changed', self.change_language)
+        header.pack_start(self.language_combo)
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
         outer.set_border_width(20)
         self.add(outer)
@@ -82,21 +90,21 @@ class Editor(Features, Gtk.ApplicationWindow):
             label = Gtk.Label(xalign=0)
             label.set_markup('<b>' + text + '</b>')
             controls.pack_start(label, False, False, 3)
-        title('Изображение')
-        image_button = Gtk.Button(label='Выбрать картинку…')
+        title(tr('Изображение'))
+        image_button = Gtk.Button(label=tr('Выбрать картинку…'))
         image_button.connect('clicked', self.choose_image)
         controls.pack_start(image_button, False, False, 0)
         self.filename = Gtk.Label(xalign=0, max_width_chars=30)
         self.filename.set_ellipsize(3)
         controls.pack_start(self.filename, False, False, 0)
-        title('Символы')
+        title(tr('Символы'))
         self.charset = Gtk.ComboBoxText()
         self.refresh_presets()
         self.charset.connect('changed', self.charset_changed)
         controls.pack_start(self.charset, False, False, 0)
         self.text_mode = Gtk.ComboBoxText()
-        self.text_mode.append('characters', 'Отдельные символы')
-        self.text_mode.append('phrases', 'Слова и фразы — строка на выражение')
+        self.text_mode.append('characters', tr('Отдельные символы'))
+        self.text_mode.append('phrases', tr('Слова и фразы — строка на выражение'))
         self.text_mode.set_active_id('characters')
         self.text_mode.connect('changed', self.changed)
         controls.pack_start(self.text_mode, False, False, 0)
@@ -106,7 +114,7 @@ class Editor(Features, Gtk.ApplicationWindow):
         self.characters.set_right_margin(6)
         self.characters.set_top_margin(6)
         self.characters.set_bottom_margin(6)
-        self.characters.set_tooltip_text('Введите свои символы. В режиме слов и фраз пишите каждое выражение с новой строки.')
+        self.characters.set_tooltip_text(tr('Введите свои символы. В режиме слов и фраз пишите каждое выражение с новой строки.'))
         self.characters.get_buffer().connect('changed', self.changed)
         text_scroll = Gtk.ScrolledWindow()
         text_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -115,24 +123,24 @@ class Editor(Features, Gtk.ApplicationWindow):
         text_scroll.add(self.characters)
         controls.pack_start(text_scroll, False, False, 0)
         preset_actions = Gtk.Box(spacing=6)
-        add_preset = Gtk.Button(label='Сохранить свой набор…')
+        add_preset = Gtk.Button(label=tr('Сохранить свой набор…'))
         add_preset.connect('clicked', self.save_symbol_preset)
         preset_actions.pack_start(add_preset, True, True, 0)
         self.delete_preset = Gtk.Button.new_from_icon_name('edit-delete-symbolic', Gtk.IconSize.BUTTON)
-        self.delete_preset.set_tooltip_text('Удалить выбранный собственный набор')
+        self.delete_preset.set_tooltip_text(tr('Удалить выбранный собственный набор'))
         self.delete_preset.set_sensitive(False)
         self.delete_preset.connect('clicked', self.delete_symbol_preset)
         preset_actions.pack_start(self.delete_preset, False, False, 0)
         controls.pack_start(preset_actions, False, False, 0)
-        title('Цвета')
+        title(tr('Цвета'))
         self.palette = Gtk.ComboBoxText()
-        self.palette.append_text('Свои цвета')
-        for name in PALETTES: self.palette.append_text(name)
+        self.palette.append('custom', tr('Свои цвета'))
+        for name in PALETTES: self.palette.append(name, tr(name))
         self.palette.set_active(0)
         self.palette.connect('changed', self.palette_changed)
         controls.pack_start(self.palette, False, False, 0)
         color_row = Gtk.Box(spacing=16)
-        for key, label in [('foreground', 'Символы'), ('background', 'Фон'), ('highlight', 'Головки')]:
+        for key, label in [('foreground', tr('Символы')), ('background', tr('Фон')), ('highlight', tr('Головки'))]:
             box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
             button = Gtk.ColorButton()
             button.set_title(label)
@@ -142,12 +150,12 @@ class Editor(Features, Gtk.ApplicationWindow):
             self.colors[key] = button
             color_row.pack_start(box, True, True, 0)
         controls.pack_start(color_row, False, False, 0)
-        title('Движение и детализация')
+        title(tr('Движение и детализация'))
         for key, label, low, high, step, digits in [
-            ('size', 'Размер символов', 8, 32, 1, 0),
-            ('speed', 'Скорость', .2, 3, .1, 1),
-            ('brightness', 'Яркость', .3, 2, .05, 2),
-            ('contrast', 'Контраст', .5, 2, .05, 2),
+            ('size', tr('Размер символов'), 8, 32, 1, 0),
+            ('speed', tr('Скорость'), .2, 3, .1, 1),
+            ('brightness', tr('Яркость'), .3, 2, .05, 2),
+            ('contrast', tr('Контраст'), .5, 2, .05, 2),
         ]:
             row = Gtk.Box(spacing=10)
             row.pack_start(Gtk.Label(label=label, xalign=0), True, True, 0)
@@ -158,13 +166,13 @@ class Editor(Features, Gtk.ApplicationWindow):
             row.pack_start(scale, False, False, 0)
             controls.pack_start(row, False, False, 0)
             self.scales[key] = scale
-        self.autostart = Gtk.CheckButton(label='Запускать при входе в систему')
+        self.autostart = Gtk.CheckButton(label=tr('Запускать при входе в систему'))
         controls.pack_start(self.autostart, False, False, 6)
         self.install_features(outer, body, scroll, controls)
         preview_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         body.pack_start(preview_box, True, True, 0)
         label = Gtk.Label(xalign=0)
-        label.set_markup('<b>Живой предпросмотр</b>')
+        label.set_markup(tr('<b>Живой предпросмотр</b>'))
         preview_box.pack_start(label, False, False, 0)
         self.area = Gtk.DrawingArea()
         self.area.set_size_request(520, 320)
@@ -177,30 +185,32 @@ class Editor(Features, Gtk.ApplicationWindow):
         self.preview_frame = frame
         frame.add(self.area)
         preview_box.pack_start(frame, True, True, 0)
-        self.preview_message = Gtk.Label(label='Настройки предпросмотра не меняют обои до нажатия «Применить».', xalign=0)
+        self.preview_message = Gtk.Label(label=tr('Настройки предпросмотра не меняют обои до нажатия «Применить».'), xalign=0)
         self.preview_message.set_line_wrap(True)
         self.preview_message.set_max_width_chars(65)
         preview_box.pack_start(self.preview_message, False, False, 0)
         actions = Gtk.Box(spacing=10)
         outer.pack_end(actions, False, False, 0)
-        self.status = Gtk.Label(label='Готово', xalign=0)
+        self.status = Gtk.Label(label=tr('Готово'), xalign=0)
         actions.pack_start(self.status, True, True, 0)
         self.install_actions(actions)
-        reset = Gtk.Button(label='Сбросить настройки')
+        reset = Gtk.Button(label=tr('Сбросить настройки'))
         reset.connect('clicked', self.reset)
         actions.pack_start(reset, False, False, 0)
-        self.stop_button = Gtk.Button(label='Остановить обои')
+        self.stop_button = Gtk.Button(label=tr('Остановить обои'))
         self.stop_button.connect('clicked', self.stop_wallpaper)
         actions.pack_start(self.stop_button, False, False, 0)
-        self.apply_button = Gtk.Button(label='Применить к рабочему столу')
+        self.apply_button = Gtk.Button(label=tr('Применить к рабочему столу'))
         self.apply_button.get_style_context().add_class('suggested-action')
         self.apply_button.connect('clicked', self.apply)
         actions.pack_start(self.apply_button, False, False, 0)
         self.connect('destroy', self.cleanup)
         install_help(self, header)
         self.fill(self.values)
+        if state is not None: self.restore_ui(state)
         self.loading = False
         self.show_all()
+        if state is not None: self.tabs.set_current_page(state['page'])
         self.changed()
         self.poll_timer = GLib.timeout_add_seconds(3, self.poll_status)
 
@@ -220,20 +230,77 @@ class Editor(Features, Gtk.ApplicationWindow):
         self.autostart.set_active(AUTOSTART.exists() and 'Hidden=true' not in AUTOSTART.read_text())
         self.loading = False
 
-    def collect(self):
+    def collect_raw(self):
         values = {'image': self.image_path, 'characters': self.characters.get_text(), 'mode': self.text_mode.get_active_id()}
         for key, button in self.colors.items():
             c = button.get_rgba()
             values[key] = '#%02x%02x%02x' % tuple(round(v * 255) for v in (c.red, c.green, c.blue))
         for key, scale in self.scales.items(): values[key] = scale.get_value()
         values.update(self.collect_features())
-        return validate(values)
+        return values
+
+    def collect(self):
+        return validate(self.collect_raw())
+
+    def snapshot_ui(self):
+        return {
+            'raw': self.collect_raw(), 'values': self.values, 'draft': self.profile_draft,
+            'target': self.target, 'autostart': self.autostart.get_active(),
+            'charset': self.charset.get_active_id(), 'palette': self.palette.get_active_id(),
+            'profile': self.profiles_combo.get_active_id(), 'page': self.tabs.get_current_page(),
+            'size': self.get_size(), 'position': self.get_position(),
+            'ratio': self.preview_frame.get_property('ratio'),
+            'guide': getattr(self, 'guide_window', None) is not None,
+        }
+
+    def restore_ui(self, state):
+        self.loading = True
+        self.matrix_switching = True
+        try:
+            self.values = state['values']
+            self.profile_draft = state['draft']
+            self.target = state['target']
+            self.monitor_combo.set_active_id(self.target or 'all')
+            self.profiles_combo.set_active_id(state['profile'])
+            self.charset.set_active_id(state['charset'])
+            self.palette.set_active_id(state['palette'])
+            # Fill after selecting presets so their handlers cannot replace the draft.
+            self.fill(state['raw'])
+            self.autostart.set_active(state['autostart'])
+            self.preview_frame.set_property('ratio', state['ratio'])
+            self.resize(*state['size'])
+            self.move(*state['position'])
+        finally:
+            self.matrix_switching = False
+            self.loading = False
+        if state['guide']:
+            from help_ui import open_guide
+            GLib.idle_add(lambda: open_guide(self))
+
+    def change_language(self, combo):
+        language = combo.get_active_id()
+        old_language = get_language()
+        if not language or language == old_language or self.loading: return
+        if self.busy:
+            combo.set_active_id(old_language)
+            return
+        state = self.snapshot_ui()
+        try:
+            set_language(language)
+            replacement = Editor(self.get_application(), state=state)
+        except Exception as error:
+            if get_language() != old_language: set_language(old_language)
+            combo.set_active_id(old_language)
+            self.error(str(error))
+            return
+        self.destroy()
+        replacement.present()
 
     def choose_image(self, button):
-        dialog = Gtk.FileChooserDialog(title='Картинка для матричных обоев', transient_for=self, action=Gtk.FileChooserAction.OPEN)
-        dialog.add_buttons('Отмена', Gtk.ResponseType.CANCEL, 'Выбрать', Gtk.ResponseType.OK)
+        dialog = Gtk.FileChooserDialog(title=tr('Картинка для матричных обоев'), transient_for=self, action=Gtk.FileChooserAction.OPEN)
+        dialog.add_buttons(tr('Отмена'), Gtk.ResponseType.CANCEL, tr('Выбрать'), Gtk.ResponseType.OK)
         filt = Gtk.FileFilter()
-        filt.set_name('Изображения (PNG, JPEG, WebP и другие)')
+        filt.set_name(tr('Изображения (PNG, JPEG, WebP и другие)'))
         filt.add_mime_type('image/*')
         dialog.add_filter(filt)
         if Path(self.image_path).exists(): dialog.set_filename(self.image_path)
@@ -247,10 +314,10 @@ class Editor(Features, Gtk.ApplicationWindow):
 
     def refresh_presets(self, selected='custom'):
         self.charset.remove_all()
-        self.charset.append('custom', 'Свой набор / редактировать')
-        for name in CHARSETS: self.charset.append('built:' + name, name)
-        for name in PHRASESETS: self.charset.append('phrase:' + name, name)
-        for name in self.saved_presets: self.charset.append('saved:' + name, 'Мой: ' + name)
+        self.charset.append('custom', tr('Свой набор / редактировать'))
+        for name in CHARSETS: self.charset.append('built:' + name, tr(name))
+        for name in PHRASESETS: self.charset.append('phrase:' + name, tr(name))
+        for name in self.saved_presets: self.charset.append('saved:' + name, tr('Мой: ') + name)
         self.charset.set_active_id(selected)
 
     def charset_changed(self, combo):
@@ -274,15 +341,15 @@ class Editor(Features, Gtk.ApplicationWindow):
         except Exception as e:
             self.error(str(e))
             return
-        dialog = Gtk.Dialog(title='Сохранить свой набор', transient_for=self, modal=True)
-        dialog.add_buttons('Отмена', Gtk.ResponseType.CANCEL, 'Сохранить', Gtk.ResponseType.OK)
+        dialog = Gtk.Dialog(title=tr('Сохранить свой набор'), transient_for=self, modal=True)
+        dialog.add_buttons(tr('Отмена'), Gtk.ResponseType.CANCEL, tr('Сохранить'), Gtk.ResponseType.OK)
         content = dialog.get_content_area()
         content.set_border_width(16)
         content.set_spacing(8)
-        content.pack_start(Gtk.Label(label='Название набора', xalign=0), False, False, 0)
+        content.pack_start(Gtk.Label(label=tr('Название набора'), xalign=0), False, False, 0)
         entry = Gtk.Entry()
         entry.set_max_length(60)
-        entry.set_placeholder_text('Например: Мои команды')
+        entry.set_placeholder_text(tr('Например: Мои команды'))
         entry.set_activates_default(True)
         content.pack_start(entry, False, False, 0)
         dialog.set_default_response(Gtk.ResponseType.OK)
@@ -313,7 +380,7 @@ class Editor(Features, Gtk.ApplicationWindow):
             self.refresh_presets()
 
     def palette_changed(self, combo):
-        name = combo.get_active_text()
+        name = combo.get_active_id()
         if name in PALETTES:
             for key, value in zip(('foreground', 'background', 'highlight'), PALETTES[name]):
                 rgba = Gdk.RGBA()
@@ -362,13 +429,14 @@ class Editor(Features, Gtk.ApplicationWindow):
             xid = self.area.get_window().get_xid()
             self.preview_process = subprocess.Popen([str(BASE / 'renderer'), str(self.preview_file), '-', str(xid)], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if getattr(self, 'preview_hidden', False): self.preview_process.send_signal(signal.SIGSTOP)
-            self.preview_message.set_text('Предпросмотр обновляется автоматически. Нажмите «Применить», чтобы установить эти обои.')
+            self.preview_message.set_text(tr('Предпросмотр обновляется автоматически. Нажмите «Применить», чтобы установить эти обои.'))
         except Exception as e:
             self.preview_message.set_text(str(e))
         return False
 
     def error(self, message):
-        dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.ERROR, buttons=Gtk.ButtonsType.CLOSE, text='Не удалось выполнить действие')
+        dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.ERROR, buttons=Gtk.ButtonsType.NONE, text=tr('Не удалось выполнить действие'))
+        dialog.add_button(tr('Закрыть'), Gtk.ResponseType.CLOSE)
         dialog.format_secondary_text(message)
         dialog.run()
         dialog.destroy()
@@ -376,6 +444,7 @@ class Editor(Features, Gtk.ApplicationWindow):
     def work(self, function):
         if self.busy: return
         self.busy = True
+        self.language_combo.set_sensitive(False)
         self.apply_button.set_sensitive(False)
         self.stop_button.set_sensitive(False)
         def run():
@@ -388,10 +457,11 @@ class Editor(Features, Gtk.ApplicationWindow):
     def finish(self, message, error):
         self.busy = False
         if self.closed: return False
+        self.language_combo.set_sensitive(True)
         self.apply_button.set_sensitive(True)
         self.stop_button.set_sensitive(True)
         if error:
-            self.status.set_text('Ошибка')
+            self.status.set_text(tr('Ошибка'))
             self.error(error)
         else: self.status.set_text(message)
         return False
@@ -402,7 +472,7 @@ class Editor(Features, Gtk.ApplicationWindow):
             self.error(str(e))
             return
         autostart = self.autostart.get_active()
-        self.status.set_text('Применяю…')
+        self.status.set_text(tr('Применяю…'))
         def update():
             commit_all(values)
             set_autostart(autostart)
@@ -417,19 +487,19 @@ class Editor(Features, Gtk.ApplicationWindow):
                     if json.loads(STATUS.read_text()).get('config_mtime') == wanted: break
                 except (FileNotFoundError,ValueError): pass
                 time.sleep(.2)
-            else: raise RuntimeError('Менеджер не применил настройки. Проверьте журнал обоев.')
+            else: raise RuntimeError(tr('Менеджер не применил настройки. Проверьте журнал обоев.'))
             if subprocess.run(['systemctl', '--user', 'is-active', '--quiet', 'matrix-wallpaper.service']).returncode:
                 log = subprocess.run(['journalctl', '--user', '-u', 'matrix-wallpaper.service', '-n', '8', '--no-pager'], capture_output=True, text=True)
                 raise RuntimeError(log.stdout)
             self.values = values['monitors'].get(self.target, values)
             self.profile_draft = None
-            return 'Обои применены'
+            return tr('Обои применены')
         self.work(update)
 
     def stop_wallpaper(self, button):
-        self.status.set_text('Останавливаю…')
+        self.status.set_text(tr('Останавливаю…'))
         def stop():
-            return 'Обои остановлены'
+            return tr('Обои остановлены')
         self.work(stop)
 
     def reset(self, button):
@@ -444,7 +514,7 @@ class Editor(Features, Gtk.ApplicationWindow):
         if self.closed: return False
         self.update_system()
         if self.preview_process and self.preview_process.poll() is not None:
-            self.preview_message.set_text('Предпросмотр остановлен. Измените настройку, чтобы запустить его снова.')
+            self.preview_message.set_text(tr('Предпросмотр остановлен. Измените настройку, чтобы запустить его снова.'))
         return True
 
     def cleanup(self, *args):

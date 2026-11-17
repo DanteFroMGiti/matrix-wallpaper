@@ -1,4 +1,5 @@
 """Load either supported GTK3 tray implementation across distributions."""
+from i18n import tr
 import importlib
 import gi
 
@@ -10,4 +11,4 @@ def load_indicator():
             return importlib.import_module('gi.repository.' + name)
         except (ValueError, ImportError):
             continue
-    raise ImportError('Нужен AppIndicator3 или AyatanaAppIndicator3 (GTK 3).')
+    raise ImportError(tr('Нужен AppIndicator3 или AyatanaAppIndicator3 (GTK 3).'))

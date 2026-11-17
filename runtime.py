@@ -1,4 +1,5 @@
 """Desktop inspection, energy policy and renderer supervision."""
+from i18n import tr
 import json
 import hashlib
 import threading
@@ -118,7 +119,7 @@ class Desktop:
         return max(frames,key=lambda f:max(0,min(m['x']+m['width'],f[1]+f[3])-max(m['x'],f[1]))*max(0,min(m['y']+m['height'],f[2]+f[4])-max(m['y'],f[2])))
     def capture(self,layout):
         frames=self.frames()
-        if not frames:raise RuntimeError('Рабочий стол XFCE не найден.')
+        if not frames:raise RuntimeError(tr('Рабочий стол XFCE не найден.'))
         props=subprocess.run(['xfconf-query','-c','xfce4-desktop','-lv'],capture_output=True,text=True)
         backdrop='\n'.join(line for line in props.stdout.splitlines() if line.startswith('/backdrop/'))
         stamps=[]
@@ -169,7 +170,7 @@ class Desktop:
                     snapshots={frame.id:self.frame_image(frame,fw,fh) for frame,fx,fy,fw,fh in frames}
                     for m in layout:
                         frame,fx,fy,fw,fh=self.frame_for(m,frames);x=m['x']-fx;y=m['y']-fy
-                        if min(x,y)<0 or x+m['width']>fw or y+m['height']>fh:raise RuntimeError('Область монитора выходит за границы рабочего стола.')
+                        if min(x,y)<0 or x+m['width']>fw or y+m['height']>fh:raise RuntimeError(tr('Область монитора выходит за границы рабочего стола.'))
                         snapshots[frame.id].crop((x,y,x+m['width'],y+m['height'])).save(files[m['name']])
                 finally:
                     subprocess.run(['xfconf-query','-c','xfce4-desktop','-p','/desktop-icons/style','-s','2'],check=True,timeout=3)
@@ -213,7 +214,7 @@ class Manager:
             key,name=choice
             previous=json.loads(SCHEDULE_STATE.read_text()).get('key') if SCHEDULE_STATE.exists() else None
             if key!=previous:
-                if name not in load_profiles():raise ValueError('Профиль расписания не найден: '+name)
+                if name not in load_profiles():raise ValueError(tr('Профиль расписания не найден: ')+name)
                 activate_profile(name);atomic_json(SCHEDULE_STATE,{'key':key})
     def rebuild(self,layout):
         RUNTIME.mkdir(parents=True,exist_ok=True)

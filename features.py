@@ -1,4 +1,5 @@
 """Profiles, monitor controls, advanced effect options, pause and export UI."""
+from i18n import tr
 import json
 import os
 from pathlib import Path
@@ -20,59 +21,60 @@ class Features(Tools):
         self.target=None;self.profile_draft=None;self.export_cancel=None
         self.choices={};self.flags={}
         toolbar=Gtk.Box(spacing=8)
-        toolbar.pack_start(Gtk.Label(label='Профиль'),False,False,0)
-        self.matrix_button=Gtk.Button(label='Матрица')
-        self.matrix_button.set_tooltip_text('Готовый режим: зелёный дождь сверху вниз, яркие головки, катакана и постепенная сборка выбранной картинки. Ограничения нагрузки сохраняются.')
+        toolbar.pack_start(Gtk.Label(label=tr('Профиль')),False,False,0)
+        self.matrix_button=Gtk.Button(label=tr('Матрица'))
+        self.matrix_button.set_tooltip_text(tr('Готовый режим: зелёный дождь сверху вниз, яркие головки, катакана и постепенная сборка выбранной картинки. Ограничения нагрузки сохраняются.'))
         self.matrix_button.connect('clicked',self.enable_matrix_mode)
         toolbar.pack_start(self.matrix_button,False,False,0)
         self.profiles_combo=Gtk.ComboBoxText();self.refresh_profiles()
         self.profiles_combo.connect('changed',self.choose_profile)
         toolbar.pack_start(self.profiles_combo,True,True,0)
-        for label,callback in [('Сохранить профиль…',self.save_profile),('Удалить',self.delete_profile)]:
+        for label,callback in [(tr('Сохранить профиль…'),self.save_profile),(tr('Удалить'),self.delete_profile)]:
             b=Gtk.Button(label=label);b.connect('clicked',callback);toolbar.pack_start(b,False,False,0)
         outer.pack_start(toolbar,False,False,0);outer.reorder_child(toolbar,0)
         body.remove(scroll)
         tabs=Gtk.Notebook();tabs.set_size_request(355,-1)
-        tabs.append_page(scroll,Gtk.Label(label='Оформление'))
+        self.tabs=tabs
+        tabs.append_page(scroll,Gtk.Label(label=tr('Оформление')))
         advanced=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=12);advanced.set_border_width(12)
         advanced_scroll=Gtk.ScrolledWindow();advanced_scroll.set_policy(Gtk.PolicyType.NEVER,Gtk.PolicyType.AUTOMATIC);advanced_scroll.add(advanced)
-        tabs.append_page(advanced_scroll,Gtk.Label(label='Эффекты и система'))
+        tabs.append_page(advanced_scroll,Gtk.Label(label=tr('Эффекты и система')))
         body.pack_start(tabs,False,False,0);body.reorder_child(tabs,0)
         def title(text):
             label=Gtk.Label(xalign=0);label.set_markup('<b>'+text+'</b>');advanced.pack_start(label,False,False,4)
-        title('Мониторы')
-        self.monitor_combo=Gtk.ComboBoxText();self.monitor_combo.append('all','Общие настройки для мониторов')
+        title(tr('Мониторы'))
+        self.monitor_combo=Gtk.ComboBoxText();self.monitor_combo.append('all',tr('Общие настройки для мониторов'))
         self.monitor_names=[]
         self.refresh_monitors()
         self.monitor_combo.set_active_id('all');self.monitor_combo.connect('changed',self.monitor_changed)
         advanced.pack_start(self.monitor_combo,False,False,0)
-        reset_monitor=Gtk.Button(label='Использовать общие настройки')
+        reset_monitor=Gtk.Button(label=tr('Использовать общие настройки'))
         reset_monitor.connect('clicked',self.reset_monitor)
         advanced.pack_start(reset_monitor,False,False,0)
-        title('Дождь и проявление')
+        title(tr('Дождь и проявление'))
         for key,label,choices in [
-            ('direction','Направление потоков',[('down','Сверху вниз'),('up','Снизу вверх'),('right','Слева направо'),('left','Справа налево')]),
-            ('glyph_direction','Движение символов',[('none','Неподвижно'),('left','Справа налево'),('right','Слева направо'),('up','Снизу вверх'),('down','Сверху вниз')]),
-            ('reveal','Изображение',[('steady','Постоянно читается'),('reveal','Плавно собирается'),('cycle','Собирается и распадается')]),
-            ('color_mode','Режим цвета',[('mono','Выбранный цвет'),('source','Цвета исходной картинки'),('gradient','Градиент'),('rainbow','Радуга')])]:
+            ('direction',tr('Направление потоков'),[('down',tr('Сверху вниз')),('up',tr('Снизу вверх')),('right',tr('Слева направо')),('left',tr('Справа налево'))]),
+            ('glyph_direction',tr('Движение символов'),[('none',tr('Неподвижно')),('left',tr('Справа налево')),('right',tr('Слева направо')),('up',tr('Снизу вверх')),('down',tr('Сверху вниз'))]),
+            ('reveal',tr('Изображение'),[('steady',tr('Постоянно читается')),('reveal',tr('Плавно собирается')),('cycle',tr('Собирается и распадается'))]),
+            ('color_mode',tr('Режим цвета'),[('mono',tr('Выбранный цвет')),('source',tr('Цвета исходной картинки')),('gradient',tr('Градиент')),('rainbow',tr('Радуга'))])]:
             advanced.pack_start(Gtk.Label(label=label,xalign=0),False,False,0)
             combo=Gtk.ComboBoxText()
             for ident,text in choices:combo.append(ident,text)
             combo.connect('changed',self.changed);self.choices[key]=combo;advanced.pack_start(combo,False,False,0)
-        for key,label,low,high,step,digits in [('glyph_speed','Скорость символов, ячеек/с',0,8,.1,1),('tail','Длина хвоста',3,70,1,0),('density','Плотность потоков',.1,1,.05,2),('cycle','Период проявления, с',6,60,1,0),('fps','Частота кадров',5,60,1,0),('battery_fps','FPS от батареи',3,20,1,0)]:
+        for key,label,low,high,step,digits in [('glyph_speed',tr('Скорость символов, ячеек/с'),0,8,.1,1),('tail',tr('Длина хвоста'),3,70,1,0),('density',tr('Плотность потоков'),.1,1,.05,2),('cycle',tr('Период проявления, с'),6,60,1,0),('fps',tr('Частота кадров'),5,60,1,0),('battery_fps',tr('FPS от батареи'),3,20,1,0)]:
             advanced.pack_start(Gtk.Label(label=label,xalign=0),False,False,0)
             scale=Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL,low,high,step);scale.set_digits(digits);scale.connect('value-changed',self.changed);self.scales[key]=scale;advanced.pack_start(scale,False,False,0)
-        text_hint=Gtk.Label(label='«Неподвижно» фиксирует символы. Направление и свечение потоков настраиваются отдельно.',xalign=0);text_hint.set_line_wrap(True);text_hint.set_max_width_chars(35);advanced.pack_start(text_hint,False,False,0)
-        title('Экономия ресурсов')
-        for key,label in [('random_speed','Случайная скорость потоков'),('eco','Экономичный режим: до 12 FPS'),('pause_hidden','Пауза, когда обои скрыты окнами'),('pause_locked','Пауза при блокировке экрана')]:
+        text_hint=Gtk.Label(label=tr('«Неподвижно» фиксирует символы. Направление и свечение потоков настраиваются отдельно.'),xalign=0);text_hint.set_line_wrap(True);text_hint.set_max_width_chars(35);advanced.pack_start(text_hint,False,False,0)
+        title(tr('Экономия ресурсов'))
+        for key,label in [('random_speed',tr('Случайная скорость потоков')),('eco',tr('Экономичный режим: до 12 FPS')),('pause_hidden',tr('Пауза, когда обои скрыты окнами')),('pause_locked',tr('Пауза при блокировке экрана'))]:
             check=Gtk.CheckButton(label=label);check.connect('toggled',self.changed);self.flags[key]=check;advanced.pack_start(check,False,False,0)
-        hint=Gtk.Label(label='В экономичном режиме FPS снижается при работе от батареи. Настройки мониторов сохраняются по кнопке «Применить».',xalign=0);hint.set_line_wrap(True);hint.set_max_width_chars(35);advanced.pack_start(hint,False,False,0)
+        hint=Gtk.Label(label=tr('В экономичном режиме FPS снижается при работе от батареи. Настройки мониторов сохраняются по кнопке «Применить».'),xalign=0);hint.set_line_wrap(True);hint.set_max_width_chars(35);advanced.pack_start(hint,False,False,0)
         self.connect('window-state-event',self.preview_window_state)
         self.install_tools(tabs,controls)
 
     def install_actions(self,actions):
-        self.pause_button=Gtk.Button(label='Пауза');self.pause_button.connect('clicked',lambda *_:set_paused(not get_paused()));actions.pack_start(self.pause_button,False,False,0)
-        b=Gtk.Button(label='Экспорт MP4…');b.connect('clicked',self.export_dialog);actions.pack_start(b,False,False,0)
+        self.pause_button=Gtk.Button(label=tr('Пауза'));self.pause_button.connect('clicked',lambda *_:set_paused(not get_paused()));actions.pack_start(self.pause_button,False,False,0)
+        b=Gtk.Button(label=tr('Экспорт MP4…'));b.connect('clicked',self.export_dialog);actions.pack_start(b,False,False,0)
         self.system_timer=0
         self.attach_metrics()
 
@@ -90,7 +92,7 @@ class Features(Tools):
         selected=self.monitor_combo.get_active_id() or 'all'
         self.monitor_names=names
         old_loading=self.loading;self.loading=True
-        self.monitor_combo.remove_all();self.monitor_combo.append('all','Общие настройки для мониторов')
+        self.monitor_combo.remove_all();self.monitor_combo.append('all',tr('Общие настройки для мониторов'))
         for m in names:self.monitor_combo.append(m['name'],f"{m['name']} · {m['width']}×{m['height']}")
         self.monitor_combo.set_active_id(selected if selected=='all' or any(m['name']==selected for m in names) else 'all')
         self.loading=old_loading
@@ -114,7 +116,7 @@ class Features(Tools):
         self.profile_draft['monitors'].pop(self.target,None)
         # Return to the shared configuration so Apply removes the override.
         self.monitor_combo.set_active_id('all')
-        self.status.set_text('Нажмите «Применить», чтобы убрать отдельные настройки')
+        self.status.set_text(tr('Нажмите «Применить», чтобы убрать отдельные настройки'))
 
     def configuration(self):
         current=validate(self.profile_draft or load());values=self.collect()
@@ -127,7 +129,7 @@ class Features(Tools):
         return source_path(self.target) if self.target in values['monitors'] else SOURCE
 
     def refresh_profiles(self,selected='custom'):
-        self.profiles_combo.remove_all();self.profiles_combo.append('custom','Текущие настройки');self.profiles_combo.append('builtin:matrix','Матрица — готовый режим')
+        self.profiles_combo.remove_all();self.profiles_combo.append('custom',tr('Текущие настройки'));self.profiles_combo.append('builtin:matrix',tr('Матрица — готовый режим'))
         for name in load_profiles():self.profiles_combo.append('profile:'+name,name)
         self.profiles_combo.set_active_id(selected)
 
@@ -153,12 +155,12 @@ class Features(Tools):
             self.charset.set_active_id('custom')
             self.palette.set_active(0)
             self.profiles_combo.set_active_id('builtin:matrix')
-            self.status.set_text('Матрица — нажмите «Применить»')
+            self.status.set_text(tr('Матрица — нажмите «Применить»'))
         finally:self.matrix_switching=False
         self.changed()
 
     def name_dialog(self,title):
-        dialog=Gtk.Dialog(title=title,transient_for=self,modal=True);dialog.add_buttons('Отмена',Gtk.ResponseType.CANCEL,'Сохранить',Gtk.ResponseType.OK)
+        dialog=Gtk.Dialog(title=title,transient_for=self,modal=True);dialog.add_buttons(tr('Отмена'),Gtk.ResponseType.CANCEL,tr('Сохранить'),Gtk.ResponseType.OK)
         entry=Gtk.Entry();entry.set_max_length(80);entry.set_activates_default(True)
         content=dialog.get_content_area();content.set_border_width(16);content.add(entry)
         dialog.set_default_response(Gtk.ResponseType.OK);dialog.set_response_sensitive(Gtk.ResponseType.OK,False)
@@ -169,7 +171,7 @@ class Features(Tools):
     def save_profile(self,button):
         try:values=self.configuration()
         except Exception as e:self.error(str(e));return
-        name=self.name_dialog('Название профиля')
+        name=self.name_dialog(tr('Название профиля'))
         if name:
             try:store_profile(name,values);self.refresh_profiles('profile:'+name)
             except Exception as e:self.error(str(e))
@@ -189,13 +191,13 @@ class Features(Tools):
     def update_system(self):
         if self.closed:return False
         try:
-            self.refresh_monitors();self.pause_button.set_label('Продолжить' if get_paused() else 'Пауза')
+            self.refresh_monitors();self.pause_button.set_label(tr('Продолжить') if get_paused() else tr('Пауза'))
             if not self.busy:
                 status=json.loads(STATUS.read_text());self.update_metrics(status);screens=status.get('monitors',{})
                 if screens:
                     item=screens.get(self.target) or next(iter(screens.values()))
-                    self.status.set_text(item['reason'] if item['paused'] else f"Обои · {item['fps']} FPS")
-                else:self.status.set_text('Обои остановлены')
+                    self.status.set_text(tr(item['reason']) if item['paused'] else tr('Обои · {value0} FPS').format(value0=item['fps']))
+                else:self.status.set_text(tr('Обои остановлены'))
         except (OSError,ValueError,subprocess.SubprocessError):pass
         return True
 
@@ -203,10 +205,10 @@ class Features(Tools):
         if self.busy:return
         try:values=self.collect()
         except Exception as e:self.error(str(e));return
-        dialog=Gtk.FileChooserDialog(title='Экспорт анимации в MP4',transient_for=self,action=Gtk.FileChooserAction.SAVE)
-        dialog.add_buttons('Отмена',Gtk.ResponseType.CANCEL,'Экспортировать',Gtk.ResponseType.OK)
+        dialog=Gtk.FileChooserDialog(title=tr('Экспорт анимации в MP4'),transient_for=self,action=Gtk.FileChooserAction.SAVE)
+        dialog.add_buttons(tr('Отмена'),Gtk.ResponseType.CANCEL,tr('Экспортировать'),Gtk.ResponseType.OK)
         dialog.set_current_name('matrix-wallpaper.mp4');dialog.set_do_overwrite_confirmation(True)
-        video_filter=Gtk.FileFilter();video_filter.set_name('Видео MP4');video_filter.add_pattern('*.mp4');dialog.add_filter(video_filter)
+        video_filter=Gtk.FileFilter();video_filter.set_name(tr('Видео MP4'));video_filter.add_pattern('*.mp4');dialog.add_filter(video_filter)
         extra=Gtk.Grid(column_spacing=12,row_spacing=8);extra.set_border_width(12)
         duration=Gtk.SpinButton.new_with_range(2,60,1);duration.set_value(8)
         rate=Gtk.SpinButton.new_with_range(5,60,1);rate.set_value(20)
@@ -214,22 +216,23 @@ class Features(Tools):
         for ident,name in [('854x480','480p · 854×480'),('1280x720','720p · 1280×720'),('1920x1080','1080p · 1920×1080')]:resolution.append(ident,name)
         resolution.set_active_id('1280x720')
         for widget,key in [(duration,'duration'),(rate,'export_fps'),(resolution,'resolution')]:tip(widget,key)
-        for row,(label,widget) in enumerate([('Длительность, с',duration),('Кадров в секунду',rate),('Размер видео',resolution)]):extra.attach(Gtk.Label(label=label,xalign=0),0,row,1,1);extra.attach(widget,1,row,1,1)
+        for row,(label,widget) in enumerate([(tr('Длительность, с'),duration),(tr('Кадров в секунду'),rate),(tr('Размер видео'),resolution)]):extra.attach(Gtk.Label(label=label,xalign=0),0,row,1,1);extra.attach(widget,1,row,1,1)
         dialog.set_extra_widget(extra);extra.show_all()
         answer=dialog.run();filename=dialog.get_filename();seconds=duration.get_value_as_int();fps=rate.get_value_as_int();width,height=map(int,resolution.get_active_id().split('x'));dialog.destroy()
         if answer!=Gtk.ResponseType.OK:return
         if not filename.lower().endswith('.mp4'):
             filename+='.mp4'
             if Path(filename).exists():
-                confirm=Gtk.MessageDialog(transient_for=self,modal=True,message_type=Gtk.MessageType.QUESTION,buttons=Gtk.ButtonsType.YES_NO,text='Заменить существующее видео?')
+                confirm=Gtk.MessageDialog(transient_for=self,modal=True,message_type=Gtk.MessageType.QUESTION,buttons=Gtk.ButtonsType.NONE,text=tr('Заменить существующее видео?'))
+                confirm.add_buttons(tr('Нет'),Gtk.ResponseType.NO,tr('Да'),Gtk.ResponseType.YES)
                 confirm.format_secondary_text(filename);replace=confirm.run();confirm.destroy()
                 if replace!=Gtk.ResponseType.YES:return
         source=Path(values['image'])
         if not source.exists():source=self.current_source()
         self.export_cancel=threading.Event()
-        progress_dialog=Gtk.Dialog(title='Экспорт видео',transient_for=self,modal=False)
-        progress_dialog.add_button('Отменить',Gtk.ResponseType.CANCEL)
-        progressbar=Gtk.ProgressBar();progressbar.set_show_text(True);progressbar.set_text('Подготовка…');progressbar.set_size_request(340,-1)
+        progress_dialog=Gtk.Dialog(title=tr('Экспорт видео'),transient_for=self,modal=False)
+        progress_dialog.add_button(tr('Отменить'),Gtk.ResponseType.CANCEL)
+        progressbar=Gtk.ProgressBar();progressbar.set_show_text(True);progressbar.set_text(tr('Подготовка…'));progressbar.set_size_request(340,-1)
         content=progress_dialog.get_content_area();content.set_border_width(20);content.add(progressbar);progress_dialog.show_all()
         def cancel(*_):self.export_cancel.set();return True
         progress_dialog.connect('response',cancel);progress_dialog.connect('delete-event',cancel)
@@ -240,7 +243,7 @@ class Features(Tools):
             GLib.idle_add(update)
         def run():
             try:export_video(values,source,filename,width,height,fps,seconds,self.export_cancel,report)
-            except InterruptedError:return 'Экспорт отменён'
+            except InterruptedError:return tr('Экспорт отменён')
             finally:GLib.idle_add(progress_dialog.destroy)
-            return 'Видео сохранено: '+Path(filename).name
-        self.status.set_text('Экспорт…');self.work(run)
+            return tr('Видео сохранено: ')+Path(filename).name
+        self.status.set_text(tr('Экспорт…'));self.work(run)

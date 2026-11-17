@@ -26,6 +26,7 @@ __pycache__/
 /schedule.json
 /status.json
 /control.json
+/ui.json
 *.mwp
 .env
 .env.*

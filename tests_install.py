@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 BASE = Path(__file__).resolve().parent
 SCRIPT = BASE / 'install-online.sh'
+VERSION = (BASE / 'VERSION').read_text().strip()
 
 
 def shell(code):
@@ -45,7 +46,7 @@ if matrix_install_packages; then exit 90; else exit 0; fi
     def test_checksum_rejects_corruption_and_other_filenames(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)
-            name = 'matrix-wallpaper-3.5.0.tar.gz'
+            name = f'matrix-wallpaper-{VERSION}.tar.gz'
             archive = path / name
             checksum = path / (name + '.sha256')
             archive.write_bytes(b'verified archive fixture')
@@ -67,8 +68,8 @@ curl() { printf 'UNEXPECTED CURL\\n'; return 99; }
 matrix_download /tmp/download-fixture
 ''')
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn('GH release download v3.5.0', result.stdout)
-        self.assertIn('--pattern matrix-wallpaper-3.5.0.tar.gz.sha256', result.stdout)
+        self.assertIn(f'GH release download v{VERSION}', result.stdout)
+        self.assertIn(f'--pattern matrix-wallpaper-{VERSION}.tar.gz.sha256', result.stdout)
         self.assertNotIn('UNEXPECTED CURL', result.stdout)
 
     def test_failed_public_download_does_not_continue(self):
@@ -101,8 +102,8 @@ systemctl() { return 0; }
 xfdesktop() { return 0; }
 matrix_download() {
     printf '%s' "$1" > RECORD
-    printf 'bad archive' > "$1/matrix-wallpaper-3.5.0.tar.gz"
-    printf 'bad checksum\\n' > "$1/matrix-wallpaper-3.5.0.tar.gz.sha256"
+    printf 'bad archive' > "$1/matrix-wallpaper-${MATRIX_VERSION}.tar.gz"
+    printf 'bad checksum\\n' > "$1/matrix-wallpaper-${MATRIX_VERSION}.tar.gz.sha256"
 }
 matrix_install_packages() { touch MARKER; }
 XDG_SESSION_TYPE=x11

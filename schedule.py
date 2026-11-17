@@ -1,4 +1,5 @@
 """Daily profile schedule, evaluated in the user's local timezone."""
+from i18n import tr
 from datetime import datetime,timedelta
 import json
 import re
@@ -11,11 +12,11 @@ def save_schedule(data):
     profiles=load_profiles();entries=[]
     for item in data['entries']:
         value=item['time']
-        if not re.fullmatch(r'(?:[01]\d|2[0-3]):[0-5]\d',value):raise ValueError('Введите время в формате ЧЧ:ММ.')
-        if item['profile'] not in profiles:raise ValueError('Профиль не найден: '+item['profile'])
+        if not re.fullmatch(r'(?:[01]\d|2[0-3]):[0-5]\d',value):raise ValueError(tr('Введите время в формате ЧЧ:ММ.'))
+        if item['profile'] not in profiles:raise ValueError(tr('Профиль не найден: ')+item['profile'])
         entries.append({'time':value,'profile':item['profile']})
-    if data['enabled'] and not entries:raise ValueError('Добавьте хотя бы один пункт расписания.')
-    if len({e['time'] for e in entries})!=len(entries):raise ValueError('Время в расписании повторяется.')
+    if data['enabled'] and not entries:raise ValueError(tr('Добавьте хотя бы один пункт расписания.'))
+    if len({e['time'] for e in entries})!=len(entries):raise ValueError(tr('Время в расписании повторяется.'))
     atomic_json(SCHEDULE,{'enabled':bool(data['enabled']),'entries':sorted(entries,key=lambda e:e['time'])})
 def due(data,now=None):
     if not data.get('enabled') or not data.get('entries'):return None
