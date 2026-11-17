@@ -5,14 +5,14 @@
 
 ## Скачать и установить заново
 
-Репозиторий: [DanteFroMGiti/matrix-wallpaper](https://github.com/DanteFroMGiti/matrix-wallpaper). Установочные архивы находятся в [Releases](https://github.com/DanteFroMGiti/matrix-wallpaper/releases). Для закрытого репозитория войдите в свой аккаунт GitHub.
+Репозиторий: [DanteFroMGiti/matrix-wallpaper](https://github.com/DanteFroMGiti/matrix-wallpaper). Установочные архивы находятся в [Releases](https://github.com/DanteFroMGiti/matrix-wallpaper/releases). Скачивание и установка доступны без аккаунта GitHub.
 
 ### Одна команда с автоматической установкой зависимостей
 
-Для текущего закрытого репозитория нужен установленный GitHub CLI (`gh`) с доступом к репозиторию и выполненным `gh auth login`. Затем:
+В терминале обычного пользователя выполните одну команду. Нужен `curl`; GitHub CLI и авторизация не требуются:
 
 ```bash
-gh api -H 'Accept: application/vnd.github.raw' repos/DanteFroMGiti/matrix-wallpaper/contents/install-online.sh | bash
+curl -fsSL https://raw.githubusercontent.com/DanteFroMGiti/matrix-wallpaper/main/install-online.sh | bash
 ```
 
 Установщик скачивает релиз 3.5.0, сверяет SHA-256, устанавливает системные зависимости через `pacman` или `apt-get`, собирает отрисовщик и добавляет приложение в меню. Запускайте команду обычным пользователем: `sudo` вызывается только для системных пакетов и может запросить пароль. Автоматическая установка пакетов предусмотрена для Arch/CachyOS/Manjaro и Debian/Ubuntu/Linux Mint. В других дистрибутивах используйте ручную установку ниже.
@@ -35,7 +35,7 @@ matrix-wallpaper
 
 Первый шаг перечислит недостающие зависимости. Установите их средствами своего дистрибутива и повторите проверку. Требуется рабочий стол **XFCE в сеансе X11**, композитор и пользовательский systemd. Установщик собирает нативный отрисовщик, поэтому нужны компилятор C, pkg-config и библиотеки разработки X11, Xext, XComposite, Cairo, Pango и libepoxy. Python-компоненты: GTK 3 через PyGObject, AppIndicator3 или AyatanaAppIndicator3, Pillow, NumPy и python-xlib. Дополнительные команды проверяются установщиком.
 
-Также можно установить из клона репозитория после авторизации GitHub:
+Также можно установить из клона репозитория:
 
 ```bash
 git clone https://github.com/DanteFroMGiti/matrix-wallpaper.git
