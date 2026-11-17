@@ -3,8 +3,9 @@ from pathlib import Path
 import subprocess
 import gi
 gi.require_version('Gtk','3.0')
-gi.require_version('AppIndicator3','0.1')
-from gi.repository import Gtk,GLib,AppIndicator3
+from gi.repository import Gtk,GLib
+from indicator import load_indicator
+AppIndicator3=load_indicator()
 from settings import load_profiles,activate_profile,get_paused,set_paused
 
 class Tray:

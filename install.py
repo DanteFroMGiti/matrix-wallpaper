@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-FILES=['app.py','features.py','tools_ui.py','help_ui.py','composition.py','portable.py','settings.py','runtime.py','audio.py','schedule.py','exporter.py','tray.py','start.py','control.py','renderer.c','gpu.h','build.sh','README.md','tests_v2.py','tests_v3.py','default.png','VERSION','install.py','matrix-wallpaper.svg','build_release.py','desktop_layer.py','tests_v4.py']
+FILES=['app.py','features.py','tools_ui.py','help_ui.py','composition.py','portable.py','settings.py','runtime.py','audio.py','schedule.py','exporter.py','tray.py','indicator.py','start.py','control.py','renderer.c','gpu.h','build.sh','README.md','tests_v2.py','tests_v3.py','default.png','VERSION','install.py','install-online.sh','tests_install.py','matrix-wallpaper.svg','build_release.py','desktop_layer.py','tests_v4.py']
 
 def dependencies():
     errors=[]
@@ -21,9 +21,13 @@ def dependencies():
         except ImportError:errors.append('Python: '+module)
     try:
         import gi
-        for module,version in [('Gtk','3.0'),('AppIndicator3','0.1')]:
+        for module,version in [('Gtk','3.0')]:
             try:gi.require_version(module,version)
             except ValueError:errors.append(module)
+        for name in ('AppIndicator3','AyatanaAppIndicator3'):
+            try:gi.require_version(name,'0.1');break
+            except ValueError:pass
+        else:errors.append('AppIndicator3 / AyatanaAppIndicator3')
     except ImportError:pass
     for tool in ['cc','pkg-config','systemctl','systemd-run','xfconf-query','xrandr','ffmpeg','ffprobe','pactl','parec']:
         if not shutil.which(tool):errors.append(tool)

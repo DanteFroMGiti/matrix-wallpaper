@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import signal
 import subprocess
+import sys
 import time
 from Xlib import X, display
 from Xlib.ext import composite
@@ -241,7 +242,7 @@ class Manager:
     def run(self):
         signal.signal(signal.SIGTERM,lambda *_:setattr(self,'running',False))
         signal.signal(signal.SIGINT,lambda *_:setattr(self,'running',False))
-        self.tray=subprocess.Popen(['/usr/bin/python',str(BASE/'tray.py')])
+        self.tray=subprocess.Popen([sys.executable,str(BASE/'tray.py')])
         self.pointer.start()
         check=0
         try:

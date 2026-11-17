@@ -19,7 +19,9 @@ with tempfile.TemporaryDirectory(prefix='matrix-release-') as folder:
     checksums={name:hashlib.sha256((payload/name).read_bytes()).hexdigest() for name in FILES}
     (payload/'checksums.json').write_text(json.dumps(checksums,indent=2)+'\n')
     shutil.copy2(BASE/'install.py',package/'install.py')
+    shutil.copy2(BASE/'install-online.sh',package/'install-online.sh')
     (package/'install.sh').write_text('#!/bin/sh\nexec python3 "$(dirname "$0")/install.py" "$@"\n');(package/'install.sh').chmod(0o755)
     (package/'INSTALL.txt').write_text('Matrix Wallpaper '+version+'\n\nТребуется XFCE/X11.\nПроверка: python3 install.py --check\nУстановка: python3 install.py\nОбновление: python3 install.py --update\nУдаление с сохранением данных: python3 install.py --uninstall\nПолное удаление: python3 install.py --uninstall --purge-data\n\nПодробности: payload/README.md\nЛичные картинки и настройки в этот архив не включены.\n')
     with tarfile.open(output,'w:gz') as archive:archive.add(package,arcname=package.name)
+output.with_name(output.name+'.sha256').write_text(hashlib.sha256(output.read_bytes()).hexdigest()+'  '+output.name+'\n')
 print(output)
