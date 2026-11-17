@@ -1,0 +1,31 @@
+# Generated executables and release archives
+/renderer
+/renderer.new
+/dist/
+
+# Python caches and local tooling
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.idea/
+.vscode/
+
+# User images, profiles, masks and machine state
+/source.png
+/sources/
+/profile-images/
+/masks/
+/backups/
+/benchmarks/
+/examples/
+/installed-files.json
+/settings.json
+/profiles.json
+/symbol-presets.json
+/schedule.json
+/status.json
+/control.json
+*.mwp
+.env
+.env.*
